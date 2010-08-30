@@ -2008,6 +2008,24 @@ static int handle_printenv(FILE *in, request_rec *r, const char *error)
     }
 }
 
+static int handle_hidek(FILE *in, request_rec *r, const char *error)
+{
+    char tag[MAX_STRING_LEN];
+    char *tag_val;
+
+    while (1) {
+        if (!(tag_val = get_tag(r->pool, in, tag, sizeof(tag), 1))) {
+            return 1;
+        }
+        else if (!strcmp(tag, "done")) {
+            return 0;
+        }
+        else {
+            rputs("born bee wild!", r);
+        }
+    }
+}
+
 
 
 /* -------------------------- The main function --------------------------- */
@@ -2129,6 +2147,9 @@ static void send_parsed_content(FILE *f, request_rec *r)
                 ret = handle_perl(f, r, error);
             }
 #endif
+            else if (!strcmp(directive, "hidek")) {
+                ret = handle_hidek(f, r, error);
+            }
             else {
                 log_printf(r->server, "httpd: unknown directive \"%s\" "
                             "in parsed doc %s",
@@ -2156,7 +2177,7 @@ static void send_parsed_content(FILE *f, request_rec *r)
  * option only changes the default.
  */
 
-module includes_module;
+module hidek_module;
 enum xbithack {
     xbithack_off, xbithack_on, xbithack_full
 };
@@ -2167,7 +2188,7 @@ enum xbithack {
 #define DEFAULT_XBITHACK xbithack_off
 #endif
 
-static void *create_includes_dir_config(pool *p, char *dummy)
+static void *create_hidek_dir_config(pool *p, char *dummy)
 {
     enum xbithack *result = (enum xbithack *) palloc(p, sizeof(enum xbithack));
     *result = DEFAULT_XBITHACK;
@@ -2198,7 +2219,7 @@ static int send_parsed_file(request_rec *r)
 {
     FILE *f;
     enum xbithack *state =
-    (enum xbithack *) get_module_config(r->per_dir_config, &includes_module);
+    (enum xbithack *) get_module_config(r->per_dir_config, &hidek_module);
     int errstatus;
 
     if (!(allow_options(r) & OPT_INCLUDES)) {
@@ -2284,7 +2305,7 @@ static int xbithack_handler(request_rec *r)
     }
 
     state = (enum xbithack *) get_module_config(r->per_dir_config,
-                                                &includes_module);
+                                                &hidek_module);
 
     if (*state == xbithack_off) {
         return DECLINED;
@@ -2293,31 +2314,31 @@ static int xbithack_handler(request_rec *r)
 #endif
 }
 
-static command_rec includes_cmds[] =
+static command_rec hidek_cmds[] =
 {
     {"XBitHack", set_xbithack, NULL, OR_OPTIONS, TAKE1, "Off, On, or Full"},
     {NULL}
 };
 
-static handler_rec includes_handlers[] =
+static handler_rec hidek_handlers[] =
 {
     {INCLUDES_MAGIC_TYPE, send_shtml_file},
     {INCLUDES_MAGIC_TYPE3, send_shtml_file},
-    {"server-parsed", send_parsed_file},
+    {"celebrate-hidek", send_parsed_file},
     {"text/html", xbithack_handler},
     {NULL}
 };
 
-module includes_module =
+module hidek_module =
 {
     STANDARD_MODULE_STUFF,
     NULL,                       /* initializer */
-    create_includes_dir_config, /* dir config creater */
+    create_hidek_dir_config, /* dir config creater */
     NULL,                       /* dir merger --- default is to override */
     NULL,                       /* server config */
     NULL,                       /* merge server config */
-    includes_cmds,              /* command table */
-    includes_handlers,          /* handlers */
+    hidek_cmds,              /* command table */
+    hidek_handlers,          /* handlers */
     NULL,                       /* filename translation */
     NULL,                       /* check_user_id */
     NULL,                       /* check auth */
