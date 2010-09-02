@@ -71,6 +71,8 @@
  * -Doug MacEachern
  */
 
+#include <math.h>
+
 #ifdef USE_PERL_SSI
 #include "config.h"
 #ifdef USE_SFIO
@@ -2021,7 +2023,44 @@ static int handle_hidek(FILE *in, request_rec *r, const char *error)
             return 0;
         }
         else {
-            rputs("born bee wild!", r);
+            struct tm tm;
+            time_t now = time(NULL);
+            time_t hidek40, hidek60;
+            unsigned int passtime;
+            int cnt_day, cnt_hour, cnt_min, cnt_sec;
+            /* 40歳のお誕生日 */
+            int year = 2010, mon = 9, day = 2;
+            char *title;
+
+            tm.tm_sec  = 0;
+            tm.tm_min  = 0;
+            tm.tm_hour = 0;
+            tm.tm_mday = day;
+            tm.tm_mon  = mon - 1;
+            tm.tm_year = year - 1900;
+
+            hidek40 = mktime(&tm);
+
+            tm.tm_year += 20;
+            hidek60 = mktime(&tm);
+
+            if (hidek40 > now) {
+                title = "ダブル成人式";
+                passtime = (unsigned int)(hidek40-now);
+            } else {
+                title = "ヒデキ★カンレキ！";
+                passtime = (unsigned int)(hidek60-now);
+            }
+
+            cnt_day   = floor(passtime / (60*60*24));
+            passtime -= cnt_day * (60*60*24);
+            cnt_hour  = floor(passtime / (60*60));
+            passtime -= cnt_hour * (60*60);
+            cnt_min   = floor(passtime / (60));
+            passtime -= cnt_min * (60);
+            cnt_sec   = passtime;
+
+            rprintf(r, "%sまであと%d日と%d時間%d分%d秒\n", title, cnt_day, cnt_hour, cnt_min, cnt_sec);
         }
     }
 }
